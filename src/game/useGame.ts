@@ -1,13 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameBlocks } from "./type";
 
 export default function useGame() {
   const [blocks, setBlocks] = useState<GameBlocks>([
-    [0, 4, 0, 0],
     [0, 0, 0, 0],
-    [0, 0, 8, 2],
-    [2, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
   ]);
+
+  function restart() {
+    const blocks: GameBlocks = [
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0],
+    ];
+    const col = randomInt(0, 3);
+    const row = randomInt(0, 3);
+    const value = randomInt(1, 2) * 2;
+    blocks[row][col] = value;
+    setBlocks(blocks);
+  }
+
+  useEffect(() => {
+    try {
+      const storedBox = JSON.parse(localStorage.getItem("blocks") ?? "");
+      if (Array.isArray(storedBox) && storedBox.length === 4) {
+        for (const row of storedBox) {
+          if (Array.isArray(row) && row.length === 4) {
+            for (const block of row) {
+              if (typeof block !== "number") {
+                throw new Error("Invalid blocks");
+              }
+            }
+          }
+        }
+      } else {
+        throw new Error("Invalid blocks");
+      }
+      setBlocks(storedBox as any);
+      saveGame(storedBox as any);
+      return;
+    } catch (e) {}
+    const col = randomInt(0, 3);
+    const row = randomInt(0, 3);
+    const value = randomInt(1, 2) * 2;
+    setBlocks((blocks) => {
+      const newBlocks = blocks.map((row) => [...row]) as GameBlocks;
+      newBlocks[row][col] = value;
+      saveGame(newBlocks);
+      return newBlocks;
+    });
+  }, []);
 
   const onSwipe: HammerListener = (event) => {
     const newBlocks = blocks.map((row) => [...row]) as GameBlocks;
@@ -125,9 +170,10 @@ export default function useGame() {
       newBlocks[indexes[index][0]][indexes[index][1]] = randomInt(1, 2) * 2;
     }
     setBlocks(newBlocks);
+    saveGame(newBlocks);
   };
 
-  return { blocks, setBlocks, onSwipe };
+  return { blocks, setBlocks, onSwipe, restart };
 }
 
 function getZeroIndex(blocks: GameBlocks) {
@@ -144,4 +190,8 @@ function getZeroIndex(blocks: GameBlocks) {
 
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function saveGame(blocks: GameBlocks) {
+  localStorage.setItem("blocks", JSON.stringify(blocks));
 }

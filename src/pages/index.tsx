@@ -4,12 +4,12 @@ import Block from "~/game/Block";
 import useGame from "~/game/useGame";
 
 const Home: NextPage = () => {
-  const { blocks, onSwipe } = useGame();
+  const { blocks, onSwipe, restart } = useGame();
   return (
-    <main className="w-screen h-screen flex justify-center items-center">
+    <main className="w-screen h-screen flex flex-col justify-center items-center">
+      <h1 className="text-center text-4xl font-bold">2048</h1>
       <Hammer onSwipe={onSwipe} direction="DIRECTION_ALL">
         <div className="w-full max-w-screen-sm bg-[#CDC1B4] p-4 select-none">
-          <h1 className="text-center text-4xl font-bold">2048</h1>
           <div className="font-medium text-4xl">
             {blocks.map((row, rowIdx) => (
               <div
@@ -24,6 +24,12 @@ const Home: NextPage = () => {
           </div>
         </div>
       </Hammer>
+      <button
+        onClick={restart}
+        className="bg-[#8F7A66] rounded-md p-4 text-white font-bold mt-2"
+      >
+        RESTART
+      </button>
     </main>
   );
 };
