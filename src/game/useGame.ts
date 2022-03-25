@@ -144,7 +144,9 @@ export default function useGame() {
       default:
         break;
     }
-    addRandom(newBlocks);
+    if (isMoved) {
+      addRandom(newBlocks);
+    }
     setBlocks(newBlocks);
     saveGame(newBlocks);
   };
