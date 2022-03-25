@@ -184,7 +184,7 @@ function up(blocks: GameBlocks) {
           const index2 = getIndex(k, i);
           if (blocks[index2].value === 0) {
             newPos = index2;
-          } else if (blocks[index2] === blocks[index]) {
+          } else if (blocks[index2].value === blocks[index].value) {
             newPos = index2;
             isAdd = true;
           } else {
