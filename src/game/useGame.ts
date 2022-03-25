@@ -9,6 +9,8 @@ export default function useGame() {
     [0, 0, 0, 0],
   ]);
 
+  const [gameOver, setGameOver] = useState(false);
+
   function restart() {
     const blocks: GameBlocks = [
       [0, 0, 0, 0],
@@ -16,12 +18,48 @@ export default function useGame() {
       [0, 0, 0, 0],
       [0, 0, 0, 0],
     ];
-    const col = randomInt(0, 3);
-    const row = randomInt(0, 3);
-    const value = randomInt(1, 2) * 2;
-    blocks[row][col] = value;
+    addRandom(blocks);
+    addRandom(blocks);
+    saveGame(blocks);
     setBlocks(blocks);
   }
+
+  useEffect(() => {
+    function listener(e: KeyboardEvent) {
+      if (gameOver) return;
+      setBlocks((blocks) => {
+        let newBlocks = blocks.map((row) => [...row]) as GameBlocks;
+        let isMoved = false;
+        switch (e.key) {
+          case "ArrowUp":
+            isMoved = up(newBlocks);
+            break;
+          case "ArrowDown":
+            isMoved = down(newBlocks);
+            break;
+          case "ArrowLeft":
+            isMoved = left(newBlocks);
+            break;
+          case "ArrowRight":
+            isMoved = right(newBlocks);
+            break;
+          default:
+            break;
+        }
+        if (isMoved) {
+          newBlocks = addRandom(newBlocks);
+        }
+        saveGame(newBlocks);
+        return newBlocks;
+      });
+    }
+    window.removeEventListener("keydown", listener);
+    window.addEventListener("keydown", listener);
+
+    return () => {
+      window.removeEventListener("keydown", listener);
+    };
+  }, [gameOver]);
 
   useEffect(() => {
     try {
@@ -43,131 +81,37 @@ export default function useGame() {
       saveGame(storedBox as any);
       return;
     } catch (e) {}
-    const col = randomInt(0, 3);
-    const row = randomInt(0, 3);
-    const value = randomInt(1, 2) * 2;
     setBlocks((blocks) => {
       const newBlocks = blocks.map((row) => [...row]) as GameBlocks;
-      newBlocks[row][col] = value;
+      addRandom(newBlocks);
+      addRandom(newBlocks);
       saveGame(newBlocks);
       return newBlocks;
     });
   }, []);
 
   const onSwipe: HammerListener = (event) => {
+    if (gameOver) return;
+    let isMoved = false;
     const newBlocks = blocks.map((row) => [...row]) as GameBlocks;
     switch (event.direction) {
       case 2: // left
-        for (let i = 0; i < 4; i++) {
-          for (let j = 1; j < 4; j++) {
-            if (newBlocks[i][j] !== 0) {
-              let newPos = -1;
-              let isAdd = false;
-              for (let k = j - 1; k >= 0; k--) {
-                if (newBlocks[i][k] === 0) {
-                  newPos = k;
-                } else if (newBlocks[i][k] === newBlocks[i][j]) {
-                  newPos = k;
-                  isAdd = true;
-                } else {
-                  break;
-                }
-              }
-              if (newPos !== -1) {
-                newBlocks[i][newPos] = isAdd
-                  ? newBlocks[i][j] * 2
-                  : newBlocks[i][j];
-                newBlocks[i][j] = 0;
-              }
-            }
-          }
-        }
+        isMoved = left(newBlocks);
         break;
       case 4: // right
-        for (let i = 0; i < 4; i++) {
-          for (let j = 2; j >= 0; j--) {
-            if (newBlocks[i][j] !== 0) {
-              let newPos = -1;
-              let isAdd = false;
-              for (let k = j + 1; k < 4; k++) {
-                if (newBlocks[i][k] === 0) {
-                  newPos = k;
-                } else if (newBlocks[i][k] === newBlocks[i][j]) {
-                  newPos = k;
-                  isAdd = true;
-                } else {
-                  break;
-                }
-              }
-              if (newPos !== -1) {
-                newBlocks[i][newPos] = isAdd
-                  ? newBlocks[i][j] * 2
-                  : newBlocks[i][j];
-                newBlocks[i][j] = 0;
-              }
-            }
-          }
-        }
+        isMoved = right(newBlocks);
         break;
       case 8: // up
-        for (let i = 0; i < 4; i++) {
-          for (let j = 1; j < 4; j++) {
-            if (newBlocks[j][i] !== 0) {
-              let newPos = -1;
-              let isAdd = false;
-              for (let k = j - 1; k >= 0; k--) {
-                if (newBlocks[k][i] === 0) {
-                  newPos = k;
-                } else if (newBlocks[k][i] === newBlocks[j][i]) {
-                  newPos = k;
-                  isAdd = true;
-                } else {
-                  break;
-                }
-              }
-              if (newPos !== -1) {
-                newBlocks[newPos][i] = isAdd
-                  ? newBlocks[j][i] * 2
-                  : newBlocks[j][i];
-                newBlocks[j][i] = 0;
-              }
-            }
-          }
-        }
+        isMoved = up(newBlocks);
         break;
       case 16: // dowm
-        for (let i = 0; i < 4; i++) {
-          for (let j = 2; j >= 0; j--) {
-            if (newBlocks[j][i] !== 0) {
-              let newPos = -1;
-              let isAdd = false;
-              for (let k = j + 1; k < 4; k++) {
-                if (newBlocks[k][i] === 0) {
-                  newPos = k;
-                } else if (newBlocks[k][i] === newBlocks[j][i]) {
-                  newPos = k;
-                  isAdd = true;
-                } else {
-                  break;
-                }
-              }
-              if (newPos !== -1) {
-                newBlocks[newPos][i] = isAdd
-                  ? newBlocks[j][i] * 2
-                  : newBlocks[j][i];
-                newBlocks[j][i] = 0;
-              }
-            }
-          }
-        }
+        isMoved = down(newBlocks);
         break;
       default:
         break;
     }
-    const indexes = getZeroIndex(newBlocks);
-    if (indexes.length > 0) {
-      const index = randomInt(0, indexes.length - 1);
-      newBlocks[indexes[index][0]][indexes[index][1]] = randomInt(1, 2) * 2;
+    if (isMoved) {
+      addRandom(newBlocks);
     }
     setBlocks(newBlocks);
     saveGame(newBlocks);
@@ -194,4 +138,126 @@ function randomInt(min: number, max: number) {
 
 function saveGame(blocks: GameBlocks) {
   localStorage.setItem("blocks", JSON.stringify(blocks));
+}
+
+function up(blocks: GameBlocks) {
+  let isMoved = false;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 1; j < 4; j++) {
+      if (blocks[j][i] !== 0) {
+        let newPos = -1;
+        let isAdd = false;
+        for (let k = j - 1; k >= 0; k--) {
+          if (blocks[k][i] === 0) {
+            newPos = k;
+          } else if (blocks[k][i] === blocks[j][i]) {
+            newPos = k;
+            isAdd = true;
+          } else {
+            break;
+          }
+        }
+        if (newPos !== -1) {
+          isMoved = true;
+          blocks[newPos][i] = isAdd ? blocks[j][i] * 2 : blocks[j][i];
+          blocks[j][i] = 0;
+        }
+      }
+    }
+  }
+  return isMoved;
+}
+
+function down(blocks: GameBlocks) {
+  let isMoved = false;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 2; j >= 0; j--) {
+      if (blocks[j][i] !== 0) {
+        let newPos = -1;
+        let isAdd = false;
+        for (let k = j + 1; k < 4; k++) {
+          if (blocks[k][i] === 0) {
+            newPos = k;
+          } else if (blocks[k][i] === blocks[j][i]) {
+            newPos = k;
+            isAdd = true;
+          } else {
+            break;
+          }
+        }
+        if (newPos !== -1) {
+          isMoved = true;
+          blocks[newPos][i] = isAdd ? blocks[j][i] * 2 : blocks[j][i];
+          blocks[j][i] = 0;
+        }
+      }
+    }
+  }
+  return isMoved;
+}
+
+function left(blocks: GameBlocks) {
+  let isMoved = false;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 1; j < 4; j++) {
+      if (blocks[i][j] !== 0) {
+        let newPos = -1;
+        let isAdd = false;
+        for (let k = j - 1; k >= 0; k--) {
+          if (blocks[i][k] === 0) {
+            newPos = k;
+          } else if (blocks[i][k] === blocks[i][j]) {
+            newPos = k;
+            isAdd = true;
+          } else {
+            break;
+          }
+        }
+        if (newPos !== -1) {
+          isMoved = true;
+          blocks[i][newPos] = isAdd ? blocks[i][j] * 2 : blocks[i][j];
+          blocks[i][j] = 0;
+        }
+      }
+    }
+  }
+  return isMoved;
+}
+
+function right(blocks: GameBlocks) {
+  let isMoved = false;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 2; j >= 0; j--) {
+      if (blocks[i][j] !== 0) {
+        let newPos = -1;
+        let isAdd = false;
+        for (let k = j + 1; k < 4; k++) {
+          if (blocks[i][k] === 0) {
+            newPos = k;
+          } else if (blocks[i][k] === blocks[i][j]) {
+            newPos = k;
+            isAdd = true;
+          } else {
+            break;
+          }
+        }
+        if (newPos !== -1) {
+          isMoved = true;
+          blocks[i][newPos] = isAdd ? blocks[i][j] * 2 : blocks[i][j];
+          blocks[i][j] = 0;
+        }
+      }
+    }
+  }
+  return isMoved;
+}
+
+function addRandom(blocks: GameBlocks) {
+  const indexes = getZeroIndex(blocks);
+  if (indexes.length > 0) {
+    const index = randomInt(0, indexes.length - 1);
+    const value = Math.random() < 0.9 ? 2 : 4;
+    blocks[indexes[index][0]][indexes[index][1]] = value;
+  }
+  return blocks;
 }
