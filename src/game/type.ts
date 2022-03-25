@@ -1,2 +1,2 @@
-type BlocksRow = [number, number, number, number];
-export type GameBlocks = [BlocksRow, BlocksRow, BlocksRow, BlocksRow];
+type Block = { id: number; value: number; isNew?: boolean };
+export type GameBlocks = Array<Block>;
